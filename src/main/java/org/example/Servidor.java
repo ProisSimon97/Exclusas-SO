@@ -1,45 +1,39 @@
 package org.example;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
+import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Servidor {
-
-    private static final int PUERTO_OE = 1209;
-    private static final int PUERTO_EO = 1210;
-    public static BlockingQueue<Socket> colaOE = new LinkedBlockingQueue<>();
-    public static BlockingQueue<Socket> colaEO = new LinkedBlockingQueue<>();
+    private static final int CONNECTION_PORT = 1200;
+    private final Queue<Socket> queueOE = new LinkedBlockingQueue<>();
+    private final Queue<Socket> queueEO = new LinkedBlockingQueue<>();
 
     public static void main(String[] args) {
-        Servidor servidor = new Servidor();
-        servidor.iniciar();
+        Servidor server = new Servidor();
+        server.start();
     }
 
-    public void iniciar() {
-        try (ServerSocket serverSocketOE = new ServerSocket(PUERTO_OE);
-             ServerSocket serverSocketEO = new ServerSocket(PUERTO_EO)) {
-
-            System.out.println("Esclusas listas para la llegada de barcos");
+    public void start() {
+        try (ServerSocket serverSocket = new ServerSocket(CONNECTION_PORT)) {
+            System.out.println("Esclusas listas");
 
             while (true) {
-                try {
-                    Socket connection;
-                    if (Math.random() < 0.5) {
-                        connection = serverSocketOE.accept();
-                        new ManejadorExclusas(connection, "Oeste").start();
-                    } else {
-                        connection = serverSocketEO.accept();
-                        new ManejadorExclusas(connection, "Este").start();
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                Socket connection = serverSocket.accept();
+                new ManejadorEsclusas(this, connection).start();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Queue<Socket> getQueueOeste() {
+        return this.queueOE;
+    }
+
+    public Queue<Socket> getQueueEste() {
+        return this.queueEO;
     }
 }

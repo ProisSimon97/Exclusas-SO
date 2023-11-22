@@ -1,87 +1,68 @@
 package org.example.cliente;
 
+import org.example.config.SocketConnection;
+
 import java.io.*;
 import java.net.Socket;
 
 public class BarcoEO {
-
-    private static final String SERVER_HOST = "localhost";
-    private static final int SERVER_PORT_EO = 1210;
-
-    private final int id;
-
-    public BarcoEO(int id) {
-        this.id = id;
-    }
+    private static final String TYPE = "Este";
 
     public static void main(String[] args) {
-        int numClientes = 4;
-
-        for (int i = 0; i < numClientes; i++) {
-            int id = i;
-            new Thread(() -> new BarcoEO(id).iniciar()).start();
-        }
+        new Thread(() -> new BarcoEO().run()).start();
+        new Thread(() -> new BarcoEO().run()).start();
     }
 
-    public void iniciar() {
-        Socket socket = null;
-
+    public void run() {
         try {
-            socket = new Socket(SERVER_HOST, SERVER_PORT_EO);
+            Socket socket = SocketConnection.connection();
 
-            System.out.println("Barco-" + id + " llegó a la esclusa desde el Este");
-            enviar(socket, "Este");
+            System.out.println("Llego un barco desde el " + TYPE);
+            sendMessage(socket, TYPE);
 
-            System.out.println("Barco-" + id + " esperando confirmación para cruzar desde el Este");
+            System.out.println("Esperando confirmacion desde el " + TYPE);
 
-            String respuesta = recibir(socket);
-            if ("GRANTED".equals(respuesta)) {
-                System.out.println("Barco-" + id + " cruzando desde el Este");
+            String message = readMessage(socket);
 
-                // Simula el tiempo que tarda el barco en cruzar
+            if(message.equals("ENTRAR")) {
                 Thread.sleep(2000);
 
-                System.out.println("Barco-" + id + " terminó de cruzar.");
-                enviar(socket, "RELEASE");
+                System.out.println("Entro al canal un barco del " + TYPE);
+
+                sendMessage(socket, "PASANDO");
+
+                String response = readMessage(socket);
+
+                if(response.equals("SALIR")) {
+                    Thread.sleep(2000);
+
+                    System.out.println("Saliendo del canal, barco del " + TYPE);
+
+                    sendMessage(socket, "AFUERA");
+                }
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String recibir(Socket socket) {
-        try (InputStream inputStream = socket.getInputStream()) {
-            byte[] buffer = new byte[1024];
-            int bytesRead = inputStream.read(buffer);
-            String message = new String(buffer, 0, bytesRead);
-            System.out.println("Mensaje recibido: " + message);
-            return message;
-        } catch (IOException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
-    private void enviar(Socket socket, String message) {
-        try (OutputStream outputStream = socket.getOutputStream()) {
-            outputStream.write(message.getBytes());
-            System.out.println("Mensaje enviado: " + message);
+    private void sendMessage(Socket socket, String message) {
+        try {
+            OutputStream outputStream = socket.getOutputStream();
+            PrintWriter writer = new PrintWriter(outputStream, true);
+            writer.println(message);
         } catch (IOException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
+    private String readMessage(Socket socket) {
+        try {
+            InputStream input = socket.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            return reader.readLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
