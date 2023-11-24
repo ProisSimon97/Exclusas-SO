@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Servidor {
@@ -19,10 +21,13 @@ public class Servidor {
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(CONNECTION_PORT)) {
             System.out.println("Esclusas listas");
+            ExecutorService executor = Executors.newFixedThreadPool(1);
 
-            while (true) {
+            while(true) {
                 Socket connection = serverSocket.accept();
-                new ManejadorEsclusas(this, connection).start();
+                ManejadorEsclusas manejador =  new ManejadorEsclusas(this, connection);
+
+                manejador.run();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -3,7 +3,7 @@ package org.example;
 import java.io.*;
 import java.net.Socket;
 
-public class ManejadorEsclusas extends Thread {
+public class ManejadorEsclusas {
     private final Servidor servidor;
     private final Socket socket;
 
@@ -12,7 +12,6 @@ public class ManejadorEsclusas extends Thread {
         this.socket = socket;
     }
 
-    @Override
     public void run() {
         Socket barco1, barco2;
         String message = readMessage(socket);

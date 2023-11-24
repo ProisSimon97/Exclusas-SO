@@ -8,7 +8,7 @@ import java.net.Socket;
 public class BarcoOE {
     private static final String TYPE = "Oeste";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new Thread(() -> new BarcoOE().run()).start();
         new Thread(() -> new BarcoOE().run()).start();
     }
